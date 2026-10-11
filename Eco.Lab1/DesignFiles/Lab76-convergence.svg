@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="430" viewBox="0 0 760 430" role="img" aria-labelledby="title description">
+  <title id="title">Relative loss over the first six gradient descent updates</title>
+  <desc id="description">Four observed curves for 1, 2, 5 and 10 weights. Relative losses after six updates are approximately 0.0687, 0.0306, 0.1234 and 0.2824.</desc>
+  <rect width="760" height="430" fill="#ffffff"/>
+  <text x="80" y="32" font-family="Arial, sans-serif" font-size="20" fill="#161616">Convergence of observed weights</text>
+  <text x="80" y="54" font-family="Arial, sans-serif" font-size="13" fill="#444444">Relative loss L(k) / L(0)</text>
+  <g stroke="#d9d9d9" stroke-width="1">
+    <line x1="80" y1="60" x2="680" y2="60"/>
+    <line x1="80" y1="180" x2="680" y2="180"/>
+    <line x1="80" y1="300" x2="680" y2="300"/>
+  </g>
+  <g stroke="#444444" stroke-width="1.5">
+    <line x1="80" y1="60" x2="80" y2="300"/>
+    <line x1="80" y1="300" x2="680" y2="300"/>
+  </g>
+  <g font-family="Arial, sans-serif" font-size="13" fill="#333333">
+    <text x="34" y="65">1.0</text>
+    <text x="34" y="185">0.5</text>
+    <text x="34" y="305">0.0</text>
+    <text x="76" y="324">0</text>
+    <text x="176" y="324">1</text>
+    <text x="276" y="324">2</text>
+    <text x="376" y="324">3</text>
+    <text x="476" y="324">4</text>
+    <text x="576" y="324">5</text>
+    <text x="676" y="324">6</text>
+    <text x="326" y="352">Completed updates</text>
+  </g>
+  <polyline points="80,60 180,146.4 280,201.7 380,237.1 480,259.7 580,274.2 680,283.5" fill="none" stroke="#235c9f" stroke-width="3"/>
+  <polyline points="80,60 180,165.8 280,224.9 380,258.0 480,276.5 580,286.9 680,292.6" fill="none" stroke="#b75d27" stroke-width="3" stroke-dasharray="9 5"/>
+  <polyline points="80,60 180,130.7 280,180.5 380,215.7 480,240.5 580,258.0 680,270.4" fill="none" stroke="#2a805f" stroke-width="3" stroke-dasharray="3 5"/>
+  <polyline points="80,60 180,105.6 280,142.5 380,172.5 480,196.7 580,216.3 680,232.2" fill="none" stroke="#7a52a1" stroke-width="3" stroke-dasharray="12 4 3 4"/>
+  <g fill="#235c9f">
+    <circle cx="80" cy="60" r="4"/><circle cx="180" cy="146.4" r="4"/>
+    <circle cx="280" cy="201.7" r="4"/><circle cx="380" cy="237.1" r="4"/>
+    <circle cx="480" cy="259.7" r="4"/><circle cx="580" cy="274.2" r="4"/>
+    <circle cx="680" cy="283.5" r="4"/>
+  </g>
+  <g fill="#b75d27">
+    <rect x="176" y="161.8" width="8" height="8"/>
+    <rect x="276" y="220.9" width="8" height="8"/>
+    <rect x="376" y="254.0" width="8" height="8"/>
+    <rect x="476" y="272.5" width="8" height="8"/>
+    <rect x="576" y="282.9" width="8" height="8"/>
+    <rect x="676" y="288.6" width="8" height="8"/>
+  </g>
+  <g fill="#2a805f">
+    <circle cx="180" cy="130.7" r="4"/><circle cx="280" cy="180.5" r="4"/>
+    <circle cx="380" cy="215.7" r="4"/><circle cx="480" cy="240.5" r="4"/>
+    <circle cx="580" cy="258.0" r="4"/><circle cx="680" cy="270.4" r="4"/>
+  </g>
+  <g fill="#7a52a1">
+    <rect x="176" y="101.6" width="8" height="8"/>
+    <rect x="276" y="138.5" width="8" height="8"/>
+    <rect x="376" y="168.5" width="8" height="8"/>
+    <rect x="476" y="192.7" width="8" height="8"/>
+    <rect x="576" y="212.3" width="8" height="8"/>
+    <rect x="676" y="228.2" width="8" height="8"/>
+  </g>
+  <g font-family="Arial, sans-serif" font-size="13" fill="#222222">
+    <line x1="145" y1="374" x2="190" y2="374" stroke="#235c9f" stroke-width="3"/>
+    <text x="198" y="378">Quadratic, n=1, eta=0.1</text>
+    <line x1="390" y1="374" x2="435" y2="374" stroke="#b75d27" stroke-width="3" stroke-dasharray="9 5"/>
+    <text x="443" y="378">MSE, n=2, eta=0.03</text>
+    <line x1="145" y1="405" x2="190" y2="405" stroke="#2a805f" stroke-width="3" stroke-dasharray="3 5"/>
+    <text x="198" y="409">Quadratic, n=5, eta=0.08</text>
+    <line x1="390" y1="405" x2="435" y2="405" stroke="#7a52a1" stroke-width="3" stroke-dasharray="12 4 3 4"/>
+    <text x="443" y="409">Quadratic, n=10, eta=0.05</text>
+  </g>
+</svg>

@@ -1,0 +1,17 @@
+/*
+ * <character encoding>UTF-8 with signature</character encoding>
+ * <summary>IEcoVector</summary>
+ * <description>Owned, mutable vector of finite double_t weights.</description>
+ * <reference>openspec/changes/implement-gradient-descent-lab76</reference>
+ * <author>Eco.Lab1 contributors</author>
+ */
+import "IEcoBase1.idl";
+
+[
+    uuid(66142D06-DCC4-4B5D-84EB-22F401BBC9DE)
+]
+interface IEcoVector : IEcoUnknown {
+    int16_t GetSize([out] uint32_t* outCount);
+    int16_t GetValue([in] uint32_t index, [out] double_t* outValue);
+    int16_t SetValue([in] uint32_t index, [in] double_t value);
+};

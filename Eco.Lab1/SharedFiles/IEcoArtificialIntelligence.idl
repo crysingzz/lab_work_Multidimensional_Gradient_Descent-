@@ -1,0 +1,29 @@
+/*
+ * <character encoding>UTF-8 with signature</character encoding>
+ * <summary>IEcoArtificialIntelligence</summary>
+ * <description>Stateless multidimensional gradient-descent service.</description>
+ * <reference>openspec/changes/implement-gradient-descent-lab76</reference>
+ * <author>Eco.Lab1 contributors</author>
+ */
+import "IEcoBase1.idl";
+import "IEcoVector.idl";
+
+typedef int16_t (ECOCALLMETHOD *EcoLossFunction)(
+    [in] const double_t* weights,
+    [in] uint32_t count,
+    [in] voidptr_t context,
+    [out] double_t* outLoss);
+
+[
+    uuid(D4366E09-1671-4880-B8BC-14E842996252)
+]
+interface IEcoArtificialIntelligence : IEcoUnknown {
+    int16_t CreateVector([in] uint32_t count, [in] const double_t* values,
+                         [out] IEcoVector** outVector);
+    int16_t Optimize([in] IEcoVector* initial, [in] EcoLossFunction loss,
+                     [in] voidptr_t context, [in] double_t learningRate,
+                     [in] uint32_t maxIterations, [in] double_t differenceStep,
+                     [in] double_t gradientTolerance, [out] IEcoVector** outWeights,
+                     [out] uint32_t* outIterations, [out] bool_t* outConverged,
+                     [out] double_t* outLoss);
+};
