@@ -8,6 +8,18 @@
 
 #include "CEcoLab1.h"
 #include "ErrEcoLab1.h"
+#include <stddef.h>
+
+/* Interface pointers address their vtable fields inside the component. */
+static CEcoLab1_9907DB59* CEcoLab1_FromAI(IEcoArtificialIntelligence* me) {
+    return (CEcoLab1_9907DB59*)((unsigned char*)me -
+        offsetof(CEcoLab1_9907DB59, m_pVTblIEcoArtificialIntelligence));
+}
+
+static CEcoLab1_9907DB59* CEcoLab1_FromTrace(IEcoOptimizationTrace* me) {
+    return (CEcoLab1_9907DB59*)((unsigned char*)me -
+        offsetof(CEcoLab1_9907DB59, m_pVTblIEcoOptimizationTrace));
+}
 
 static int16_t CEcoLab1_Query(CEcoLab1_9907DB59* pCMe,
     const UGUID* riid, voidptr_t* ppv) {
@@ -22,10 +34,12 @@ static int16_t CEcoLab1_Query(CEcoLab1_9907DB59* pCMe,
         *ppv = (IEcoLab1*)pCMe;
     }
     else if (IsEqualUGUID(riid, &IID_IEcoArtificialIntelligence)) {
-        *ppv = (IEcoArtificialIntelligence*)&pCMe->m_ai;
+        *ppv = (IEcoArtificialIntelligence*)
+            &pCMe->m_pVTblIEcoArtificialIntelligence;
     }
     else if (IsEqualUGUID(riid, &IID_IEcoOptimizationTrace)) {
-        *ppv = (IEcoOptimizationTrace*)&pCMe->m_trace;
+        *ppv = (IEcoOptimizationTrace*)
+            &pCMe->m_pVTblIEcoOptimizationTrace;
     }
     else {
         return ERR_ECO_NOINTERFACE;
@@ -69,25 +83,27 @@ static uint32_t ECOCALLMETHOD CEcoLab1_LegacyRelease(IEcoLab1* me) {
 
 static int16_t ECOCALLMETHOD CEcoLab1_AIQuery(IEcoArtificialIntelligence* me,
     const UGUID* riid, voidptr_t* ppv) {
-    CEcoLab1AIView* pView = (CEcoLab1AIView*)me;
     if (me == 0) {
+        if (ppv != 0) {
+            *ppv = 0;
+        }
         return ERR_ECO_POINTER;
     }
-    return CEcoLab1_Query(pView->m_owner, riid, ppv);
+    return CEcoLab1_Query(CEcoLab1_FromAI(me), riid, ppv);
 }
 
 static uint32_t ECOCALLMETHOD CEcoLab1_AIAddRef(IEcoArtificialIntelligence* me) {
     if (me == 0) {
         return 0;
     }
-    return CEcoLab1_AddRef(((CEcoLab1AIView*)me)->m_owner);
+    return CEcoLab1_AddRef(CEcoLab1_FromAI(me));
 }
 
 static uint32_t ECOCALLMETHOD CEcoLab1_AIRelease(IEcoArtificialIntelligence* me) {
     if (me == 0) {
         return 0;
     }
-    return CEcoLab1_Release(((CEcoLab1AIView*)me)->m_owner);
+    return CEcoLab1_Release(CEcoLab1_FromAI(me));
 }
 
 static int16_t ECOCALLMETHOD CEcoLab1_TraceQuery(IEcoOptimizationTrace* me,
@@ -98,21 +114,21 @@ static int16_t ECOCALLMETHOD CEcoLab1_TraceQuery(IEcoOptimizationTrace* me,
         }
         return ERR_ECO_POINTER;
     }
-    return CEcoLab1_Query(((CEcoLab1TraceView*)me)->m_owner, riid, ppv);
+    return CEcoLab1_Query(CEcoLab1_FromTrace(me), riid, ppv);
 }
 
 static uint32_t ECOCALLMETHOD CEcoLab1_TraceAddRef(IEcoOptimizationTrace* me) {
     if (me == 0) {
         return 0;
     }
-    return CEcoLab1_AddRef(((CEcoLab1TraceView*)me)->m_owner);
+    return CEcoLab1_AddRef(CEcoLab1_FromTrace(me));
 }
 
 static uint32_t ECOCALLMETHOD CEcoLab1_TraceRelease(IEcoOptimizationTrace* me) {
     if (me == 0) {
         return 0;
     }
-    return CEcoLab1_Release(((CEcoLab1TraceView*)me)->m_owner);
+    return CEcoLab1_Release(CEcoLab1_FromTrace(me));
 }
 
 /* Legacy ABI stays at the same VTbl slot; copied text remains object-owned. */
@@ -158,7 +174,7 @@ static int16_t ECOCALLMETHOD CEcoLab1_CreateVector(
         }
         return ERR_ECO_POINTER;
     }
-    pCMe = ((CEcoLab1AIView*)me)->m_owner;
+    pCMe = CEcoLab1_FromAI(me);
     return EcoLab1CreateVector(pCMe->m_pIMem, count, values, outVector);
 }
 
@@ -406,7 +422,7 @@ static int16_t ECOCALLMETHOD CEcoLab1_Optimize(
     uint32_t* outIterations, bool_t* outConverged, double_t* outLoss) {
     CEcoLab1_9907DB59* pCMe = 0;
     if (me != 0) {
-        pCMe = ((CEcoLab1AIView*)me)->m_owner;
+        pCMe = CEcoLab1_FromAI(me);
     }
     return CEcoLab1_OptimizeCore(pCMe, initial, loss, context,
         learningRate, maxIterations, differenceStep, gradientTolerance,
@@ -422,7 +438,7 @@ static int16_t ECOCALLMETHOD CEcoLab1_OptimizeObserved(
     uint32_t* outIterations, bool_t* outConverged, double_t* outLoss) {
     CEcoLab1_9907DB59* pCMe = 0;
     if (me != 0) {
-        pCMe = ((CEcoLab1TraceView*)me)->m_owner;
+        pCMe = CEcoLab1_FromTrace(me);
     }
     if (observer == 0) {
         if (outWeights != 0) {
@@ -468,8 +484,6 @@ static int16_t ECOCALLMETHOD createCEcoLab1_9907DB59(
     if (pIUnkOuter != 0) {
         return ERR_ECO_NOAGGREGATION;
     }
-    me->m_ai.m_owner = me;
-    me->m_trace.m_owner = me;
     return ERR_ECO_SUCCESS;
 }
 
@@ -514,8 +528,8 @@ static IEcoOptimizationTraceVTbl g_TraceVTbl = {
 
 CEcoLab1_9907DB59 g_xCEcoLab1_9907DB59 = {
     &g_LegacyVTbl,
-    {&g_AIVTbl, 0},
-    {&g_TraceVTbl, 0},
+    &g_AIVTbl,
+    &g_TraceVTbl,
     initCEcoLab1_9907DB59,
     createCEcoLab1_9907DB59,
     deleteCEcoLab1_9907DB59,

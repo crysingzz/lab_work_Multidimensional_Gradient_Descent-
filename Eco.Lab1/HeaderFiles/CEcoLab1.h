@@ -29,22 +29,12 @@
 
 typedef struct CEcoLab1_9907DB59* CEcoLab1_9907DB59Ptr_t;
 
-typedef struct CEcoLab1AIView {
-    IEcoArtificialIntelligenceVTbl* pVTbl;
-    CEcoLab1_9907DB59Ptr_t m_owner;
-} CEcoLab1AIView;
-
-typedef struct CEcoLab1TraceView {
-    IEcoOptimizationTraceVTbl* pVTbl;
-    CEcoLab1_9907DB59Ptr_t m_owner;
-} CEcoLab1TraceView;
-
 typedef struct CEcoLab1_9907DB59 {
 
     /* IEcoLab1 interface function table */
     IEcoLab1VTbl* m_pVTblIEcoLab1;
-    CEcoLab1AIView m_ai;
-    CEcoLab1TraceView m_trace;
+    IEcoArtificialIntelligenceVTbl* m_pVTblIEcoArtificialIntelligence;
+    IEcoOptimizationTraceVTbl* m_pVTblIEcoOptimizationTrace;
 
     /* Instance initialization */
     int16_t (ECOCALLMETHOD *Init)(/*in*/ CEcoLab1_9907DB59Ptr_t pCMe, /* in */ IEcoUnknownPtr_t pIUnkSystem);

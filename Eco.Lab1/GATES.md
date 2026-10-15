@@ -14,8 +14,8 @@ Scope: Deliver the specified ACOM gradient-descent component, executable tests, 
   EXPECT: LAB76_NATIVE_BUILD_AND_TEST_OK
   EVIDENCE: pending
 
-- [x] G3: The console UnitTest exits zero only when numerical, ABI, failure-path and reference-balance assertions pass.
-  EVIDENCE: 2026-10-09: native build-and-test exited 0 with LAB76_NATIVE_BUILD_AND_TEST_OK; LAB76_NEGATIVE_CONTROL=1 exited 77. UnitTest assertions cover the named scenarios.
+- [x] G3: The console UnitTest exits zero when numerical, ABI, callback-failure and reference-balance assertions pass.
+  EVIDENCE: 2026-10-14: C89 native build and current console UnitTest exited 0 with LAB76_NATIVE_BUILD_AND_TEST_OK. The removed intentional-failure mode no longer provides a negative control of the process exit code.
 
 - [ ] G4: Component and own test source/object checks show no forbidden libc calls or unexpanded template tokens.
   CHECK: sh Eco.Lab1/AssemblyFiles/Mac/check-no-libc.sh

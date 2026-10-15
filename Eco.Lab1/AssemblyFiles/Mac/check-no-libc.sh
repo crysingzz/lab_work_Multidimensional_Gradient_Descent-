@@ -25,10 +25,6 @@ if [ -f "$output_dir/EcoLab1Visualize.o" ]; then
     undefined_symbols="$undefined_symbols
 $(nm -u "$output_dir/EcoLab1Visualize.o")"
 fi
-if [ -f "$output_dir/EcoLab1VisualizeNegative.o" ]; then
-    undefined_symbols="$undefined_symbols
-$(nm -u "$output_dir/EcoLab1VisualizeNegative.o")"
-fi
 if printf '%s\n' "$undefined_symbols" | rg '(^|[[:space:]])_+(malloc|free|realloc|calloc|memcpy|memmove|memset|strlen|printf|fprintf|sprintf|sqrt|fabs|stack_chk_fail|stack_chk_guard)$'; then
     exit 1
 fi

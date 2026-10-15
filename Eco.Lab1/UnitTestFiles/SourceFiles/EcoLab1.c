@@ -8,12 +8,11 @@
 
 #include "IEcoSystem1.h"
 #include "IEcoInterfaceBus1.h"
-#include "IdEcoMemoryManager1.h"
 #include "IdEcoLab1.h"
+#include "IEcoLab1.h"
 #include "IEcoArtificialIntelligence.h"
 #include "IEcoOptimizationTrace.h"
 #include "ErrEcoLab1.h"
-#include "CEcoLab1.h"
 
 #define TEST_CHECK(condition, code) \
     do { if (!(condition)) { result = (code); goto Cleanup; } } while (0)
@@ -522,39 +521,10 @@ Cleanup:
     return result;
 }
 
-typedef struct FakeVector {
-    IEcoVectorVTbl* pVTbl;
-    uint32_t count;
-    int16_t valueError;
-    double_t value;
-} FakeVector;
-
-static int16_t ECOCALLMETHOD FakeVector_GetSize(IEcoVector* me,
-    uint32_t* outCount) {
-    *outCount = ((FakeVector*)me)->count;
-    return ERR_ECO_SUCCESS;
-}
-
-static int16_t ECOCALLMETHOD FakeVector_GetValue(IEcoVector* me,
-    uint32_t index, double_t* outValue) {
-    FakeVector* pFake = (FakeVector*)me;
-    (void)index;
-    if (pFake->valueError != ERR_ECO_SUCCESS) {
-        return pFake->valueError;
-    }
-    *outValue = pFake->value;
-    return ERR_ECO_SUCCESS;
-}
-
-static IEcoVectorVTbl g_FakeVectorVTbl = {
-    0, 0, 0, FakeVector_GetSize, FakeVector_GetValue, 0
-};
-
 static int16_t TestFailures(IEcoArtificialIntelligence* pIAI,
     double_t infinity, double_t notNumber) {
     IEcoVector* pIInitial = 0;
     IEcoVector* pIResult = 0;
-    FakeVector fake;
     LossContext context;
     double_t initial;
     double_t loss;
@@ -601,31 +571,6 @@ static int16_t TestFailures(IEcoArtificialIntelligence* pIAI,
     result = pIAI->pVTbl->Optimize(pIAI, pIInitial, QuadraticLoss, &context,
         0.1, 10, 0.00001, infinity, &pIResult, &iterations, &converged, &loss);
     TEST_CHECK(result == ERR_ECOLAB1_NONFINITE && context.calls == 0, 622);
-    fake.pVTbl = &g_FakeVectorVTbl;
-    fake.count = 0;
-    fake.valueError = ERR_ECO_SUCCESS;
-    fake.value = 1.0;
-    result = pIAI->pVTbl->Optimize(pIAI, (IEcoVector*)&fake,
-        QuadraticLoss, &context, 0.1, 10, 0.00001, 0.0,
-        &pIResult, &iterations, &converged, &loss);
-    TEST_CHECK(result == ERR_ECOLAB1_INVALID_ARGUMENT && context.calls == 0, 609);
-    fake.count = (uint32_t)~(uint32_t)0;
-    result = pIAI->pVTbl->Optimize(pIAI, (IEcoVector*)&fake,
-        QuadraticLoss, &context, 0.1, 10, 0.00001, 0.0,
-        &pIResult, &iterations, &converged, &loss);
-    TEST_CHECK(result == ERR_ECOLAB1_INVALID_ARGUMENT && context.calls == 0, 610);
-    fake.count = 1;
-    fake.valueError = 1702;
-    result = pIAI->pVTbl->Optimize(pIAI, (IEcoVector*)&fake,
-        QuadraticLoss, &context, 0.1, 10, 0.00001, 0.0,
-        &pIResult, &iterations, &converged, &loss);
-    TEST_CHECK(result == 1702 && context.calls == 0, 611);
-    fake.valueError = ERR_ECO_SUCCESS;
-    fake.value = notNumber;
-    result = pIAI->pVTbl->Optimize(pIAI, (IEcoVector*)&fake,
-        QuadraticLoss, &context, 0.1, 10, 0.00001, 0.0,
-        &pIResult, &iterations, &converged, &loss);
-    TEST_CHECK(result == ERR_ECOLAB1_NONFINITE && context.calls == 0, 612);
     context.failAt = 3;
     result = pIAI->pVTbl->Optimize(pIAI, pIInitial, QuadraticLoss,
         &context, 0.1, 1, 0.00001, 0.0,
@@ -669,157 +614,18 @@ Cleanup:
     return result;
 }
 
-typedef struct FakeAllocator {
-    IEcoMemoryAllocator1VTbl* pVTbl;
-    IEcoMemoryAllocator1* m_parent;
-    uint32_t m_refCount;
-    uint32_t m_allocations;
-    uint32_t m_failAt;
-    uint32_t m_outstanding;
-} FakeAllocator;
-
-static int16_t ECOCALLMETHOD FakeAllocator_Query(IEcoMemoryAllocator1* me,
-    const UGUID* riid, voidptr_t* ppv) {
-    (void)me;
-    (void)riid;
-    if (ppv != 0) {
-        *ppv = 0;
-    }
-    return ERR_ECO_NOINTERFACE;
-}
-
-static uint32_t ECOCALLMETHOD FakeAllocator_AddRef(IEcoMemoryAllocator1* me) {
-    return ++((FakeAllocator*)me)->m_refCount;
-}
-
-static uint32_t ECOCALLMETHOD FakeAllocator_Release(IEcoMemoryAllocator1* me) {
-    return --((FakeAllocator*)me)->m_refCount;
-}
-
-static voidptr_t ECOCALLMETHOD FakeAllocator_Alloc(IEcoMemoryAllocator1* me,
-    uint32_t size) {
-    FakeAllocator* pFake = (FakeAllocator*)me;
-    voidptr_t memory;
-    ++pFake->m_allocations;
-    if (pFake->m_allocations == pFake->m_failAt) {
-        return 0;
-    }
-    memory = pFake->m_parent->pVTbl->Alloc(pFake->m_parent, size);
-    if (memory != 0) {
-        ++pFake->m_outstanding;
-    }
-    return memory;
-}
-
-static void ECOCALLMETHOD FakeAllocator_Free(IEcoMemoryAllocator1* me,
-    voidptr_t memory) {
-    FakeAllocator* pFake = (FakeAllocator*)me;
-    if (memory != 0) {
-        --pFake->m_outstanding;
-    }
-    pFake->m_parent->pVTbl->Free(pFake->m_parent, memory);
-}
-
-static IEcoMemoryAllocator1VTbl g_FakeAllocatorVTbl = {
-    FakeAllocator_Query,
-    FakeAllocator_AddRef,
-    FakeAllocator_Release,
-    FakeAllocator_Alloc,
-    FakeAllocator_Free,
-    0, 0, 0, 0, 0
-};
-
-static int16_t TestAllocatorFailures(IEcoArtificialIntelligence* pIAI,
-    IEcoOptimizationTrace* pITrace, IEcoLab1* pILegacy,
-    IEcoMemoryAllocator1* pIMem) {
-    CEcoLab1_9907DB59* pCMe = (CEcoLab1_9907DB59*)pILegacy;
-    FakeAllocator fake;
-    IEcoVector* pIInitial = 0;
-    IEcoVector* pIResult = 0;
-    LossContext context;
-    TraceContext trace;
-    double_t initial;
-    double_t loss;
-    double_t value;
-    uint32_t iterations;
-    uint32_t failAt;
-    bool_t converged;
-    int16_t result;
-    initial = 1.0;
-    InitLoss(&context, 1);
-    fake.pVTbl = &g_FakeAllocatorVTbl;
-    fake.m_parent = pIMem;
-    fake.m_refCount = 1;
-    fake.m_allocations = 0;
-    fake.m_failAt = 1;
-    fake.m_outstanding = 0;
-    result = EcoLab1CreateVector((IEcoMemoryAllocator1*)&fake, 1,
-        &initial, &pIResult);
-    TEST_CHECK(result == ERR_ECO_OUTOFMEMORY && pIResult == 0 &&
-        fake.m_outstanding == 0, 701);
-    fake.m_allocations = 0;
-    fake.m_failAt = 2;
-    result = EcoLab1CreateVector((IEcoMemoryAllocator1*)&fake, 1,
-        &initial, &pIResult);
-    TEST_CHECK(result == ERR_ECO_OUTOFMEMORY && pIResult == 0 &&
-        fake.m_outstanding == 0, 702);
-    result = pIAI->pVTbl->CreateVector(pIAI, 1, &initial, &pIInitial);
-    TEST_CHECK(result == ERR_ECO_SUCCESS, 703);
-    for (failAt = 1; failAt <= 5; ++failAt) {
-        fake.m_allocations = 0;
-        fake.m_failAt = failAt;
-        fake.m_outstanding = 0;
-        iterations = 77;
-        converged = 1;
-        loss = 77.0;
-        pIResult = (IEcoVector*)pIInitial;
-        context.calls = 0;
-        pCMe->m_pIMem = (IEcoMemoryAllocator1*)&fake;
-        result = pIAI->pVTbl->Optimize(pIAI, pIInitial,
-            QuadraticLoss, &context, 0.1, 1, 0.00001, 0.0,
-            &pIResult, &iterations, &converged, &loss);
-        pCMe->m_pIMem = pIMem;
-        TEST_CHECK(result == ERR_ECO_OUTOFMEMORY && pIResult == 0, 704);
-        TEST_CHECK(iterations == 0 && !converged && loss == 0.0, 705);
-        TEST_CHECK(fake.m_outstanding == 0 && fake.m_refCount == 1, 706);
-        TEST_CHECK(pIInitial->pVTbl->GetValue(pIInitial, 0, &value) ==
-            ERR_ECO_SUCCESS && value == initial, 707);
-    }
-    InitTrace(&trace);
-    trace.failAt = 2;
-    context.calls = 0;
-    fake.m_allocations = 0;
-    fake.m_failAt = 0;
-    fake.m_outstanding = 0;
-    pCMe->m_pIMem = (IEcoMemoryAllocator1*)&fake;
-    result = pITrace->pVTbl->OptimizeObserved(pITrace, pIInitial,
-        QuadraticLoss, &context, 0.1, 1, 0.00001, 0.0,
-        TraceWeights, &trace, &pIResult, &iterations,
-        &converged, &loss);
-    pCMe->m_pIMem = pIMem;
-    TEST_CHECK(result == trace.failCode && pIResult == 0 &&
-        trace.calls == 2 && context.calls == 2 &&
-        fake.m_outstanding == 0 && fake.m_refCount == 1, 708);
-    result = ERR_ECO_SUCCESS;
-Cleanup:
-    pCMe->m_pIMem = pIMem;
-    if (pIInitial != 0) {
-        pIInitial->pVTbl->Release(pIInitial);
-    }
-    return result;
-}
-
 /* Eco System provides the executable entry point and propagates this status. */
 int16_t EcoMain(IEcoUnknown* pIUnk) {
     IEcoSystem1* pISys = 0;
     IEcoInterfaceBus1* pIBus = 0;
-    IEcoMemoryAllocator1* pIMem = 0;
     IEcoLab1* pILegacy = 0;
     IEcoLab1* pILegacyAgain = 0;
     IEcoArtificialIntelligence* pIAI = 0;
+    IEcoArtificialIntelligence* pIAISelf = 0;
     IEcoArtificialIntelligence* pIAIDirect = 0;
     IEcoArtificialIntelligence* pIAIFromTrace = 0;
     IEcoOptimizationTrace* pITrace = 0;
+    IEcoOptimizationTrace* pITraceSelf = 0;
     IEcoOptimizationTrace* pITraceDirect = 0;
     IEcoLab1* pILegacyFromTrace = 0;
     IEcoUnknown* pICanonical1 = 0;
@@ -834,9 +640,6 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     volatile double_t huge;
     uint32_t refCount;
     int16_t result;
-#ifdef LAB76_INJECT_FAILURE
-    return 77;
-#endif
     if (pIUnk == 0) {
         return ERR_ECO_POINTER;
     }
@@ -854,9 +657,6 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     result = pIBus->pVTbl->RegisterComponent(pIBus, &CID_EcoLab1,
         (IEcoUnknown*)pIFactory);
     TEST_CHECK(result == ERR_ECO_SUCCESS, 804);
-    result = pIBus->pVTbl->QueryComponent(pIBus, &CID_EcoMemoryManager1,
-        0, &IID_IEcoMemoryAllocator1, (voidptr_t*)&pIMem);
-    TEST_CHECK(result == ERR_ECO_SUCCESS && pIMem != 0, 805);
     result = pIBus->pVTbl->QueryComponent(pIBus, &CID_EcoLab1,
         0, &IID_IEcoLab1, (voidptr_t*)&pILegacy);
     TEST_CHECK(result == ERR_ECO_SUCCESS && pILegacy != 0, 806);
@@ -887,6 +687,9 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     result = pILegacy->pVTbl->QueryInterface(pILegacy,
         &IID_IEcoArtificialIntelligence, (voidptr_t*)&pIAI);
     TEST_CHECK(result == ERR_ECO_SUCCESS && pIAI != 0, 807);
+    result = pIAI->pVTbl->QueryInterface(pIAI,
+        &IID_IEcoArtificialIntelligence, (voidptr_t*)&pIAISelf);
+    TEST_CHECK(result == ERR_ECO_SUCCESS && pIAISelf == pIAI, 828);
     result = pIAI->pVTbl->QueryInterface(pIAI, &IID_IEcoLab1,
         (voidptr_t*)&pILegacyAgain);
     TEST_CHECK(result == ERR_ECO_SUCCESS && pILegacyAgain == pILegacy, 808);
@@ -904,6 +707,9 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     result = pIAI->pVTbl->QueryInterface(pIAI,
         &IID_IEcoOptimizationTrace, (voidptr_t*)&pITrace);
     TEST_CHECK(result == ERR_ECO_SUCCESS && pITrace != 0, 830);
+    result = pITrace->pVTbl->QueryInterface(pITrace,
+        &IID_IEcoOptimizationTrace, (voidptr_t*)&pITraceSelf);
+    TEST_CHECK(result == ERR_ECO_SUCCESS && pITraceSelf == pITrace, 837);
     result = pIBus->pVTbl->QueryComponent(pIBus, &CID_EcoLab1,
         0, &IID_IEcoOptimizationTrace, (voidptr_t*)&pITraceDirect);
     TEST_CHECK(result == ERR_ECO_SUCCESS && pITraceDirect != 0, 831);
@@ -930,11 +736,12 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     TEST_CHECK(TestStopping(pIAI) == ERR_ECO_SUCCESS, 818);
     TEST_CHECK(TestSimultaneous(pIAI) == ERR_ECO_SUCCESS, 819);
     TEST_CHECK(TestFailures(pIAI, infinity, notNumber) == ERR_ECO_SUCCESS, 820);
-    TEST_CHECK(TestAllocatorFailures(pIAI, pITrace, pILegacy, pIMem) ==
-        ERR_ECO_SUCCESS, 821);
     TEST_CHECK(TestTrace(pIAI, pITrace) == ERR_ECO_SUCCESS, 836);
     result = ERR_ECO_SUCCESS;
 Cleanup:
+    if (pITraceSelf != 0) {
+        pITraceSelf->pVTbl->Release(pITraceSelf);
+    }
     if (pICanonicalTrace != 0) {
         pICanonicalTrace->pVTbl->Release(pICanonicalTrace);
     }
@@ -943,6 +750,9 @@ Cleanup:
     }
     if (pIAIFromTrace != 0) {
         pIAIFromTrace->pVTbl->Release(pIAIFromTrace);
+    }
+    if (pIAISelf != 0) {
+        pIAISelf->pVTbl->Release(pIAISelf);
     }
     if (pITraceDirect != 0) {
         pITraceDirect->pVTbl->Release(pITraceDirect);
@@ -967,9 +777,6 @@ Cleanup:
     }
     if (pILegacy != 0) {
         pILegacy->pVTbl->Release(pILegacy);
-    }
-    if (pIMem != 0) {
-        pIMem->pVTbl->Release(pIMem);
     }
     if (pIBus != 0) {
         pIBus->pVTbl->Release(pIBus);

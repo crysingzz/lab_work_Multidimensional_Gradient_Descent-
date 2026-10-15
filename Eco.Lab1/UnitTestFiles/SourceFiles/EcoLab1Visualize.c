@@ -359,9 +359,6 @@ int16_t EcoMain(IEcoUnknown* pIUnk) {
     int16_t result;
     output.length = 0;
     output.failed = 0;
-#ifdef LAB76_VISUALIZATION_INJECT_FAILURE
-    return 77;
-#endif
     if (pIUnk == 0) {
         return 54;
     }
